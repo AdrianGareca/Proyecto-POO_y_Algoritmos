@@ -1,101 +1,133 @@
-from bottle import Bottle, run, template, request, response, redirect
-import hashlib
+from bottle import route, run, request, response, redirect, template
+import datausuario
+import random
 
-app = Bottle()
+@route('/', method='get')
+def inicio():
+    return '''<h1>Bienvenido</h1><hr>
+        <form action="/" method="post">
+            Nombre de usuario: <input name="login" type="text" /><br>
+            Contraseña: <input name="password" type="password" /><br>
+            <input value="Enviar" type="submit" />
+        </form>
+        <a href='/nuevo'>Nuevo usuario</a><br>
+        <a href='/buscar'>Buscar usuario</a>'''
 
-# Función para leer datos de archivo
-def read_file(filename):
-    try:
-        with open(filename, 'r') as f:
-            return [line.strip() for line in f.readlines()]
-    except FileNotFoundError:
-        return []
+@route('/', method='post')
+def loguear():
+    login = request.forms.get('login')
+    password = request.forms.get('password')
+    usr = datausuario.autentifica(login, password)
+    if usr:
+        s = int(random.random() * 1000000)
+        response.set_cookie("poo", str(s), secret='llave-secreta')
+        usr.sesion = s
+        datausuario.guardar()
+        return redirect('/home')
+    return "Nombre de usuario o contraseña incorrectos. <a href='/'>Volver</a>"
 
-# Función para escribir datos en archivo
-def write_file(filename, data):
-    with open(filename, 'a') as f:
-        f.write(data + '\n')
-
-# Ruta para la página de inicio
-@app.route('/')
+@route('/home')
 def home():
-    user = request.get_cookie("account", secret='some-secret-key')
-    if user:
-        return template('home', user=user)
-    else:
-        redirect('/login')
+    sesion = request.get_cookie("poo", secret='llave-secreta')
+    for usuario in datausuario.usuarios:
+        if usuario.sesion == sesion:
+            return template('''<h1>Bienvenido {{usuario}}</h1><hr>
+                <a href='/agregar_ejercicio'>Agregar Ejercicio</a><br>
+                <a href='/ver_ejercicios'>Ver Ejercicios</a><br>
+                <a href='/cerrar_sesion'>Cerrar Sesión</a>''', usuario=usuario.nombre)
+    return redirect('/')
 
-# Ruta para el registro de usuarios
-@app.route('/register', method=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        username = request.forms.get('username')
-        password = hashlib.sha256(request.forms.get('password').encode()).hexdigest()
-        users = read_file('data/users.txt')
-        
-        for user in users:
-            if username in user:
-                return "Username already exists!"
-        
-        write_file('data/users.txt', f'{username},{password}')
-        return "Registration successful! <a href='/login'>Login here</a>"
-    return template('register')
-
-# Ruta para el inicio de sesión
-@app.route('/login', method=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.forms.get('username')
-        password = hashlib.sha256(request.forms.get('password').encode()).hexdigest()
-        users = read_file('data/users.txt')
-        
-        for user in users:
-            if f'{username},{password}' == user:
-                response.set_cookie("account", username, secret='some-secret-key')
-                redirect('/')
-        
-        return "Invalid username or password!"
-    return template('login')
-
-# Ruta para cerrar sesión
-@app.route('/logout')
-def logout():
-    response.delete_cookie("account")
-    redirect('/login')
-
-# Ruta para agregar ejercicio
-@app.route('/add_exercise', method=['GET', 'POST'])
-def add_exercise():
-    user = request.get_cookie("account", secret='some-secret-key')
-    if not user:
-        redirect('/login')
+@route('/agregar_ejercicio', method=['GET', 'POST'])
+def agregar_ejercicio():
+    sesion = request.get_cookie("poo", secret='llave-secreta')
+    usuario = next((u for u in datausuario.usuarios if u.sesion == sesion), None)
+    if not usuario:
+        return redirect('/')
     
     if request.method == 'POST':
-        date = request.forms.get('date')
-        exercise_type = request.forms.get('exercise_type')
-        duration = request.forms.get('duration')
+        fecha = request.forms.get('fecha')
+        tipo_ejercicio = request.forms.get('tipo_ejercicio')
+        duracion = request.forms.get('duracion')
         
-        write_file('data/exercises.txt', f'{user},{date},{exercise_type},{duration}')
-        return "Exercise added! <a href='/'>Go back</a>"
+        with open("ejercicios.dat", 'a') as file:
+            file.write(f"{usuario.login}#{fecha}#{tipo_ejercicio}#{duracion}\n")
+        return "¡Ejercicio agregado! <a href='/home'>Volver</a>"
     
-    return template('add_exercise')
+    return '''<h1>Agregar Ejercicio</h1><hr>
+        <form action="/agregar_ejercicio" method="post">
+            Fecha: <input type="date" name="fecha"><br>
+            Tipo de Ejercicio: <input type="text" name="tipo_ejercicio"><br>
+            Duración (minutos): <input type="number" name="duracion"><br>
+            <input value="Agregar" type="submit" />
+        </form>'''
 
-# Ruta para ver ejercicios registrados
-@app.route('/view_exercises')
-def view_exercises():
-    user = request.get_cookie("account", secret='some-secret-key')
-    if not user:
-        redirect('/login')
+@route('/ver_ejercicios')
+def ver_ejercicios():
+    sesion = request.get_cookie("poo", secret='llave-secreta')
+    usuario = next((u for u in datausuario.usuarios if u.sesion == sesion), None)
+    if not usuario:
+        return redirect('/')
     
-    exercises = read_file('data/exercises.txt')
-    user_exercises = [ex for ex in exercises if ex.startswith(user)]
+    ejercicios_usuario = []
+    try:
+        with open("ejercicios.dat", 'r') as file:
+            for line in file:
+                datos = line.strip().split("#")
+                if datos[0] == usuario.login:
+                    ejercicios_usuario.append(f"{datos[1]}: {datos[2]} por {datos[3]} minutos")
+    except FileNotFoundError:
+        pass
     
-    return template('view_exercises', exercises=user_exercises, user=user)
+    return template('''<h1>Ejercicios de {{usuario}}</h1><hr>
+        % for ejercicio in ejercicios:
+            <p>{{ejercicio}}</p>
+        % end
+        <a href='/home'>Volver</a>''', usuario=usuario.nombre, ejercicios=ejercicios_usuario)
 
-# Plantillas (templates)
-@app.route('/templates/<filename:path>')
-def send_template(filename):
-    return static_file(filename, root='templates')
+@route('/buscar')
+def buscar():
+    return '''
+        <form action="/buscar" method="post">
+            Buscar: <input name="buscar" type="text" /><br>
+            <input value="Enviar" type="submit" />
+        </form>
+    '''
 
-# Iniciar el servidor
-run(app, host='localhost', port=8080, debug=True)
+@route('/buscar', method='post')
+def buscar_post():
+    buscar = request.forms.get('buscar')
+    res = datausuario.filtra_usuario_por_nombre(buscar)
+    out = ''
+    for aux in res:
+        out = out + aux.nombre + ", " + aux.apellido + "<br>"
+    out = out + "<br><a href='/'>Volver</a>"
+    return out
+
+@route('/nuevo')
+def nuevo():
+    return '''
+        <form action="/nuevo" method="post">
+            Nombre: <input name="nombre" type="text" /><br>
+            Apellido: <input name="apellido" type="text" /><br>
+            Nombre de usuario: <input name="login" type="text" /><br>
+            Contraseña: <input name="password" type="password" /><br>
+            <input value="Enviar" type="submit" />
+        </form>
+    '''
+
+@route('/nuevo', method='post')
+def recibir():
+    nombre = request.forms.get('nombre')
+    apellido = request.forms.get('apellido')
+    login = request.forms.get('login')
+    password = request.forms.get('password')
+    datausuario.nuevo_usuario(nombre, apellido, login, password)
+    return redirect('/')
+
+@route('/cerrar_sesion')
+def cerrar_sesion():
+    response.delete_cookie("poo")
+    return redirect('/')
+
+datausuario.inicializar()
+run(host='0.0.0.0', port=8080, debug=True)
