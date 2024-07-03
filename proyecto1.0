@@ -10,6 +10,7 @@ def inicio():
             Contraseña: <input name="password" type="password" /><br>
             <input value="Enviar" type="submit" />
         </form>
+        <a href='/nuevo'>Nuevo usuario</a><br>
        '''
 
 @route('/', method='post')
@@ -83,24 +84,24 @@ def ver_ejercicios():
         % end
         <a href='/home'>Volver</a>''', usuario=usuario.nombre, ejercicios=ejercicios_usuario)
 
-@route('/buscar')
-def buscar():
-    return '''
-        <form action="/buscar" method="post">
-            Buscar: <input name="buscar" type="text" /><br>
-            <input value="Enviar" type="submit" />
-        </form>
-    '''
+#@route('/buscar')
+#def buscar():
+#    return '''
+#        <form action="/buscar" method="post">
+#            Buscar: <input name="buscar" type="text" /><br>
+#            <input value="Enviar" type="submit" />
+#        </form>
+#    '''
 
-@route('/buscar', method='post')
-def buscar_post():
-    buscar = request.forms.get('buscar')
-    res = datausuario.filtra_usuario_por_nombre(buscar)
-    out = ''
-    for aux in res:
-        out = out + aux.nombre + ", " + aux.apellido + "<br>"
-    out = out + "<br><a href='/'>Volver</a>"
-    return out
+#@route('/buscar', method='post')
+#def buscar_post():
+#    buscar = request.forms.get('buscar')
+#    res = datausuario.filtra_usuario_por_nombre(buscar)
+#   out = ''
+#    for aux in res:
+#        out = out + aux.nombre + ", " + aux.apellido + "<br>"
+#    out = out + "<br><a href='/'>Volver</a>"
+#   return out
 
 @route('/nuevo')
 def nuevo():
