@@ -36,7 +36,7 @@ def home():
                 <a href='/cerrar_sesion'>Cerrar Sesión</a>''', usuario=usuario.nombre)
     return redirect('/')
 
-@route('/agregar_ejercicio', method=['GET', 'POST'])
+@route('/agregar_ejercicio', method=['get', 'post'])
 def agregar_ejercicio():
     sesion = request.get_cookie("poo", secret='llave-secreta')
     usuario = next((u for u in datausuario.usuarios if u.sesion == sesion), None)
