@@ -1,0 +1,101 @@
+from bottle import Bottle, run, template, request, response, redirect
+import hashlib
+
+app = Bottle()
+
+# Función para leer datos de archivo
+def read_file(filename):
+    try:
+        with open(filename, 'r') as f:
+            return [line.strip() for line in f.readlines()]
+    except FileNotFoundError:
+        return []
+
+# Función para escribir datos en archivo
+def write_file(filename, data):
+    with open(filename, 'a') as f:
+        f.write(data + '\n')
+
+# Ruta para la página de inicio
+@app.route('/')
+def home():
+    user = request.get_cookie("account", secret='some-secret-key')
+    if user:
+        return template('home', user=user)
+    else:
+        redirect('/login')
+
+# Ruta para el registro de usuarios
+@app.route('/register', method=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.forms.get('username')
+        password = hashlib.sha256(request.forms.get('password').encode()).hexdigest()
+        users = read_file('data/users.txt')
+        
+        for user in users:
+            if username in user:
+                return "Username already exists!"
+        
+        write_file('data/users.txt', f'{username},{password}')
+        return "Registration successful! <a href='/login'>Login here</a>"
+    return template('register')
+
+# Ruta para el inicio de sesión
+@app.route('/login', method=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.forms.get('username')
+        password = hashlib.sha256(request.forms.get('password').encode()).hexdigest()
+        users = read_file('data/users.txt')
+        
+        for user in users:
+            if f'{username},{password}' == user:
+                response.set_cookie("account", username, secret='some-secret-key')
+                redirect('/')
+        
+        return "Invalid username or password!"
+    return template('login')
+
+# Ruta para cerrar sesión
+@app.route('/logout')
+def logout():
+    response.delete_cookie("account")
+    redirect('/login')
+
+# Ruta para agregar ejercicio
+@app.route('/add_exercise', method=['GET', 'POST'])
+def add_exercise():
+    user = request.get_cookie("account", secret='some-secret-key')
+    if not user:
+        redirect('/login')
+    
+    if request.method == 'POST':
+        date = request.forms.get('date')
+        exercise_type = request.forms.get('exercise_type')
+        duration = request.forms.get('duration')
+        
+        write_file('data/exercises.txt', f'{user},{date},{exercise_type},{duration}')
+        return "Exercise added! <a href='/'>Go back</a>"
+    
+    return template('add_exercise')
+
+# Ruta para ver ejercicios registrados
+@app.route('/view_exercises')
+def view_exercises():
+    user = request.get_cookie("account", secret='some-secret-key')
+    if not user:
+        redirect('/login')
+    
+    exercises = read_file('data/exercises.txt')
+    user_exercises = [ex for ex in exercises if ex.startswith(user)]
+    
+    return template('view_exercises', exercises=user_exercises, user=user)
+
+# Plantillas (templates)
+@app.route('/templates/<filename:path>')
+def send_template(filename):
+    return static_file(filename, root='templates')
+
+# Iniciar el servidor
+run(app, host='localhost', port=8080, debug=True)
