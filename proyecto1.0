@@ -10,8 +10,7 @@ def inicio():
             Contraseña: <input name="password" type="password" /><br>
             <input value="Enviar" type="submit" />
         </form>
-        <a href='/nuevo'>Nuevo usuario</a><br>
-        <a href='/buscar'>Buscar usuario</a>'''
+       '''
 
 @route('/', method='post')
 def loguear():
