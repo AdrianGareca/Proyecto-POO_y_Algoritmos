@@ -1,0 +1,43 @@
+import random
+
+usuarios = []
+
+class Usuario:
+    def __init__(self, nombre, apellido, login, password, sesion):
+        self.nombre = nombre
+        self.apellido = apellido
+        self.login = login
+        self.password = password
+        self.sesion = sesion
+
+def autentifica(log, pas):
+    for aux in usuarios:
+        if aux.login == log and aux.password == pas:
+            return aux
+    return None
+
+def nuevo_usuario(nom, ape, log, pas):
+    u = Usuario(nom, ape, log, pas, -1)
+    usuarios.append(u)
+    guardar()
+
+def filtra_usuario_por_nombre(nombre):
+    resultado = []
+    for aux in usuarios:
+        if nombre in aux.nombre:
+            resultado.append(aux)
+    return resultado
+
+def guardar():
+    with open("usuario.dat", 'w') as arch:
+        for aux in usuarios:
+            arch.write(f"{aux.nombre}#{aux.apellido}#{aux.login}#{aux.password}#{aux.sesion}\n")
+
+def inicializar():
+    try:
+        with open("usuario.dat", 'r') as arch:
+            for line in arch:
+                p = line.strip().split("#")
+                usuarios.append(Usuario(p[0], p[1], p[2], p[3], p[4]))
+    except FileNotFoundError:
+        pass
