@@ -1,17 +1,29 @@
-from bottle import route, run, request, response, redirect, template
+from bottle import route, run, request, response, redirect, template, static_file
 import datausuario
 import random
 
+@route('/static/<filename>')
+def server_static(filename):
+    return static_file(filename, root='./static')
+
 @route('/', method='get')
 def inicio():
-    return '''<h1>Bienvenido</h1><hr>
-        <form action="/" method="post">
-            Nombre de usuario: <input name="login" type="text" /><br>
-            Contraseña: <input name="password" type="password" /><br>
-            <input value="Enviar" type="submit" />
-        </form>
-        <a href='/nuevo'>Nuevo usuario</a><br>
-       '''
+    return '''<!DOCTYPE html>
+<html>
+<head>
+    <title>Bienvenido</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>Bienvenido</h1><hr>
+    <form action="/" method="post">
+        Nombre de usuario: <input name="login" type="text" /><br>
+        Contraseña: <input name="password" type="password" /><br>
+        <input value="Enviar" type="submit" />
+    </form>
+    <a href='/nuevo'>Nuevo usuario</a><br>
+</body>
+</html>'''
 
 @route('/', method='post')
 def loguear():
@@ -31,10 +43,19 @@ def home():
     sesion = request.get_cookie("poo", secret='llave-secreta')
     for usuario in datausuario.usuarios:
         if usuario.sesion == sesion:
-            return template('''<h1>Bienvenido {{usuario}}</h1><hr>
-                <a href='/agregar_ejercicio'>Agregar Ejercicio</a><br>
-                <a href='/ver_ejercicios'>Ver Ejercicios</a><br>
-                <a href='/cerrar_sesion'>Cerrar Sesión</a>''', usuario=usuario.nombre)
+            return template('''<!DOCTYPE html>
+<html>
+<head>
+    <title>Bienvenido {{usuario}}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>Bienvenido {{usuario}}</h1><hr>
+    <a href='/agregar_ejercicio'>Agregar Ejercicio</a><br>
+    <a href='/ver_ejercicios'>Ver Ejercicios</a><br>
+    <a href='/cerrar_sesion'>Cerrar Sesión</a>
+</body>
+</html>''', usuario=usuario.nombre)
     return redirect('/')
 
 @route('/agregar_ejercicio', method=['get', 'post'])
@@ -43,23 +64,32 @@ def agregar_ejercicio():
     usuario = next((u for u in datausuario.usuarios if u.sesion == sesion), None)
     if not usuario:
         return redirect('/')
-    
+
     if request.method == 'POST':
         fecha = request.forms.get('fecha')
         tipo_ejercicio = request.forms.get('tipo_ejercicio')
         duracion = request.forms.get('duracion')
-        
+
         with open("ejercicios.dat", 'a') as file:
             file.write(f"{usuario.login}#{fecha}#{tipo_ejercicio}#{duracion}\n")
         return "¡Ejercicio agregado! <a href='/home'>Volver</a>"
-    
-    return '''<h1>Agregar Ejercicio</h1><hr>
-        <form action="/agregar_ejercicio" method="post">
-            Fecha: <input type="date" name="fecha"><br>
-            Tipo de Ejercicio: <input type="text" name="tipo_ejercicio"><br>
-            Duración (minutos): <input type="number" name="duracion"><br>
-            <input value="Agregar" type="submit" />
-        </form>'''
+
+    return '''<!DOCTYPE html>
+<html>
+<head>
+    <title>Agregar Ejercicio</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>Agregar Ejercicio</h1><hr>
+    <form action="/agregar_ejercicio" method="post">
+        Fecha: <input type="date" name="fecha"><br>
+        Tipo de Ejercicio: <input type="text" name="tipo_ejercicio"><br>
+        Duración (minutos): <input type="number" name="duracion"><br>
+        <input value="Agregar" type="submit" />
+    </form>
+</body>
+</html>'''
 
 @route('/ver_ejercicios')
 def ver_ejercicios():
@@ -67,7 +97,7 @@ def ver_ejercicios():
     usuario = next((u for u in datausuario.usuarios if u.sesion == sesion), None)
     if not usuario:
         return redirect('/')
-    
+
     ejercicios_usuario = []
     try:
         with open("ejercicios.dat", 'r') as file:
@@ -77,43 +107,41 @@ def ver_ejercicios():
                     ejercicios_usuario.append(f"{datos[1]}: {datos[2]} por {datos[3]} minutos")
     except FileNotFoundError:
         pass
-    
-    return template('''<h1>Ejercicios de {{usuario}}</h1><hr>
-        % for ejercicio in ejercicios:
-            <p>{{ejercicio}}</p>
-        % end
-        <a href='/home'>Volver</a>''', usuario=usuario.nombre, ejercicios=ejercicios_usuario)
 
-#@route('/buscar')
-#def buscar():
-#    return '''
-#        <form action="/buscar" method="post">
-#            Buscar: <input name="buscar" type="text" /><br>
-#            <input value="Enviar" type="submit" />
-#        </form>
-#    '''
-
-#@route('/buscar', method='post')
-#def buscar_post():
-#    buscar = request.forms.get('buscar')
-#    res = datausuario.filtra_usuario_por_nombre(buscar)
-#   out = ''
-#    for aux in res:
-#        out = out + aux.nombre + ", " + aux.apellido + "<br>"
-#    out = out + "<br><a href='/'>Volver</a>"
-#   return out
+    return template('''<!DOCTYPE html>
+<html>
+<head>
+    <title>Ejercicios de {{usuario}}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>Ejercicios de {{usuario}}</h1><hr>
+    % for ejercicio in ejercicios:
+        <p>{{ejercicio}}</p>
+    % end
+    <a href='/home'>Volver</a>
+</body>
+</html>''', usuario=usuario.nombre, ejercicios=ejercicios_usuario)
 
 @route('/nuevo')
 def nuevo():
-    return '''
-        <form action="/nuevo" method="post">
-            Nombre: <input name="nombre" type="text" /><br>
-            Apellido: <input name="apellido" type="text" /><br>
-            Nombre de usuario: <input name="login" type="text" /><br>
-            Contraseña: <input name="password" type="password" /><br>
-            <input value="Enviar" type="submit" />
-        </form>
-    '''
+    return '''<!DOCTYPE html>
+<html>
+<head>
+    <title>Nuevo Usuario</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>Nuevo Usuario</h1><hr>
+    <form action="/nuevo" method="post">
+        Nombre: <input name="nombre" type="text" /><br>
+        Apellido: <input name="apellido" type="text" /><br>
+        Nombre de usuario: <input name="login" type="text" /><br>
+        Contraseña: <input name="password" type="password" /><br>
+        <input value="Enviar" type="submit" />
+    </form>
+</body>
+</html>'''
 
 @route('/nuevo', method='post')
 def recibir():
