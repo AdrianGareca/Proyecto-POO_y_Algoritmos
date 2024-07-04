@@ -29,14 +29,14 @@ def filtra_usuario_por_nombre(nombre):
     return resultado
 
 def guardar():
-    arch=open("usuario.dat",'w')
-    for aux in usuarios:
-        arch.write(aux.nombre+"#"+ aux.apellido+"#"+ aux.login+"#"+ aux.password+"#"+str(aux.sesion)+ "\n")
-    arch.close()
+    with open("usuario.dat", 'w') as arch:
+        for aux in usuarios:
+            arch.write(aux.nombre+"#"+ aux.apellido+"#"+ aux.login+"#"+ aux.password+"#"+str(aux.sesion)+ "\n")
 
 def inicializar():
     arch=open("usuario.dat",'r')
     for line in arch:
-        p=linea[:-1].split("#")
-        usuarios.append(Usuario(p[0],p[1],p[2],p[3],p[4]))
+        p = line.strip().split("#")
+        usuarios.append(Usuario(p[0], p[1], p[2], p[3], p[4]))
     arch.close()
+
