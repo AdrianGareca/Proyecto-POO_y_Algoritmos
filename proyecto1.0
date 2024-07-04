@@ -2,9 +2,12 @@ from bottle import route, run, request, response, redirect, template, static_fil
 import datausuario
 import random
 
+import os 
+from bottle import static_file
 @route('/static/<filename>')
 def server_static(filename):
-    return static_file(filename, root='./static')
+    app=os.getcwd()
+    return static_file(filename, root=app+"/static")
 
 @route('/', method='get')
 def inicio():
@@ -12,7 +15,7 @@ def inicio():
 <html>
 <head>
     <title>Bienvenido</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
     <h1>Bienvenido</h1><hr>
@@ -47,7 +50,7 @@ def home():
 <html>
 <head>
     <title>Bienvenido {{usuario}}</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
     <h1>Bienvenido {{usuario}}</h1><hr>
@@ -78,7 +81,7 @@ def agregar_ejercicio():
 <html>
 <head>
     <title>Agregar Ejercicio</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/static/styles.csss">
 </head>
 <body>
     <h1>Agregar Ejercicio</h1><hr>
@@ -112,7 +115,7 @@ def ver_ejercicios():
 <html>
 <head>
     <title>Ejercicios de {{usuario}}</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
     <h1>Ejercicios de {{usuario}}</h1><hr>
@@ -129,7 +132,7 @@ def nuevo():
 <html>
 <head>
     <title>Nuevo Usuario</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
     <h1>Nuevo Usuario</h1><hr>
@@ -159,3 +162,4 @@ def cerrar_sesion():
 
 datausuario.inicializar()
 run(host='0.0.0.0', port=8080, debug=True)
+
