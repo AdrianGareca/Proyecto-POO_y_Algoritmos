@@ -12,7 +12,7 @@ def inicio():
 <html>
 <head>
     <title>Bienvenido</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <h1>Bienvenido</h1><hr>
@@ -47,7 +47,7 @@ def home():
 <html>
 <head>
     <title>Bienvenido {{usuario}}</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <h1>Bienvenido {{usuario}}</h1><hr>
@@ -78,7 +78,7 @@ def agregar_ejercicio():
 <html>
 <head>
     <title>Agregar Ejercicio</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <h1>Agregar Ejercicio</h1><hr>
@@ -112,7 +112,7 @@ def ver_ejercicios():
 <html>
 <head>
     <title>Ejercicios de {{usuario}}</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <h1>Ejercicios de {{usuario}}</h1><hr>
@@ -129,7 +129,7 @@ def nuevo():
 <html>
 <head>
     <title>Nuevo Usuario</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <h1>Nuevo Usuario</h1><hr>
